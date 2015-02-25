@@ -58,7 +58,9 @@ object LinuxPlugin extends AutoPlugin {
     packageName in Linux <<= packageName,
     executableScriptName in Linux <<= executableScriptName,
     daemonUser in Linux <<= packageName in Linux,
+    daemonUserUid in Linux := None,
     daemonGroup in Linux <<= daemonUser in Linux,
+    daemonGroupGid in Linux := None,
     daemonShell in Linux := "/bin/false",
     defaultLinuxInstallLocation := "/usr/share",
     defaultLinuxLogsLocation := "/var/log",
@@ -69,6 +71,8 @@ object LinuxPlugin extends AutoPlugin {
     stopRunlevels := None,
     requiredStartFacilities := None,
     requiredStopFacilities := None,
+    termTimeout := 60,
+    killTimeout := 30,
 
     // Default linux bashscript replacements
     linuxScriptReplacements := makeReplacements(
@@ -79,8 +83,12 @@ object LinuxPlugin extends AutoPlugin {
       appName = (packageName in Linux).value,
       version = sbt.Keys.version.value,
       daemonUser = (daemonUser in Linux).value,
+      daemonUserUid = (daemonUserUid in Linux).value,
       daemonGroup = (daemonGroup in Linux).value,
-      daemonShell = (daemonShell in Linux).value
+      daemonGroupGid = (daemonGroupGid in Linux).value,
+      daemonShell = (daemonShell in Linux).value,
+      termTimeout = (termTimeout in Linux).value,
+      killTimeout = (killTimeout in Linux).value
     ),
     linuxScriptReplacements += controlScriptFunctionsReplacement( /* Add key for control-functions */ )
 
@@ -150,10 +158,14 @@ object LinuxPlugin extends AutoPlugin {
     appName: String,
     version: String,
     daemonUser: String,
+    daemonUserUid: Option[String],
     daemonGroup: String,
+    daemonGroupGid: Option[String],
     daemonShell: String,
     retries: Int = 0,
-    retryTimeout: Int = 60
+    retryTimeout: Int = 60,
+    termTimeout: Int = 60,
+    killTimeout: Int = 30
   ): Seq[(String, String)] =
     Seq(
       "author" -> author,
@@ -165,8 +177,12 @@ object LinuxPlugin extends AutoPlugin {
       "app_name" -> appName,
       "version" -> version,
       "daemon_user" -> daemonUser,
+      "daemon_user_uid" -> daemonUserUid.getOrElse(""),
       "daemon_group" -> daemonGroup,
-      "daemon_shell" -> daemonShell
+      "daemon_group_gid" -> daemonGroupGid.getOrElse(""),
+      "daemon_shell" -> daemonShell,
+      "term_timeout" -> termTimeout.toString,
+      "kill_timeout" -> killTimeout.toString
     )
 
   /**

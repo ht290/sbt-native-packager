@@ -9,7 +9,6 @@ import sbt._
  */
 trait DockerKeys {
   val dockerGenerateConfig = TaskKey[File]("docker-generate-config", "Generates configuration file for Docker.")
-  val dockerGenerateContext = TaskKey[File]("docker-generate-context", "Generates context directory for Docker.")
   val dockerPackageMappings = TaskKey[Seq[(File, String)]]("docker-package-mappings", "Generates location mappings for Docker build.")
   val dockerTarget = TaskKey[String]("docker-target", "Defines target used when building and publishing Docker image")
 
@@ -19,5 +18,8 @@ trait DockerKeys {
   val dockerRepository = SettingKey[Option[String]]("dockerRepository", "Repository for published Docker image")
   val dockerUpdateLatest = SettingKey[Boolean]("dockerUpdateLatest", "Set to update latest tag")
   val dockerEntrypoint = SettingKey[Seq[String]]("dockerEntrypoint", "Entrypoint arguments passed in exec form")
+  val dockerCmd = SettingKey[Seq[String]]("dockerCmd", "Docker CMD. Used together with dockerEntrypoint. Arguments passed in exec form")
+
+  val dockerCommands = TaskKey[Seq[CmdLike]]("dockerCommands", "List of docker commands that form the Dockerfile")
 }
 

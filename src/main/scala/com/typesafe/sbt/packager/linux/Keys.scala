@@ -9,7 +9,9 @@ import com.typesafe.sbt.packager.archetypes.ServerLoader.ServerLoader
 trait LinuxKeys {
   val packageArchitecture = SettingKey[String]("package-architecture", "The architecture used for this linux package.")
   val daemonUser = SettingKey[String]("daemon-user", "User to start application daemon")
+  val daemonUserUid = SettingKey[Option[String]]("daemon-user-uid", "UID of daemonUser")
   val daemonGroup = SettingKey[String]("daemon-group", "Group to start application daemon")
+  val daemonGroupGid = SettingKey[Option[String]]("daemon-group-gid", "GID of daemonGroup")
   val daemonShell = SettingKey[String]("daemon-shell", "Shell provided for the daemon user")
   val serverLoading = SettingKey[ServerLoader]("server-loader", "Loading system to be used for application start script")
   val startRunlevels = SettingKey[Option[String]]("start-runlevels", "Sequence of runlevels on which application will start up")
@@ -19,6 +21,8 @@ trait LinuxKeys {
   val linuxPackageMappings = TaskKey[Seq[LinuxPackageMapping]]("linux-package-mappings", "File to install location mappings including owner and privileges.")
   val linuxPackageSymlinks = TaskKey[Seq[LinuxSymlink]]("linux-package-symlinks", "Symlinks we should produce in the underlying package.")
   val generateManPages = TaskKey[Unit]("generate-man-pages", "Shows all the man files in the current project")
+  val termTimeout = SettingKey[Int]("term-timeout", "Timeout before sigterm on stop")
+  val killTimeout = SettingKey[Int]("kill-timeout", "Timeout before sigkill on stop (after term)")
 
   val linuxMakeStartScript = TaskKey[Option[File]]("makeStartScript", "Creates or discovers the start script used by this project")
   val linuxStartScriptTemplate = TaskKey[URL]("linuxStartScriptTemplate", "The location of the template start script file we use for debian (upstart or init.d")
@@ -37,6 +41,11 @@ trait LinuxKeys {
          |  appClasspath - application classpath
          |  appMainClass - main class to start
          |  daemonUser - daemon user
+         |  daemonUserUid - daemon user uid
+         |  daemonGroup - daemon group
+         |  daemonGroupGid - daemon group gid
+         |  termTimeout - timeout before sigterm on stop
+         |  killTimeout - timeout before sigkill on stop (after term)
       """.stripMargin
   )
 

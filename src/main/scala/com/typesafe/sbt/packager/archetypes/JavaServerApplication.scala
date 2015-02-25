@@ -64,7 +64,11 @@ object JavaServerAppPackaging extends AutoPlugin {
       map makeEtcDefaultScript,
     linuxPackageMappings <++= (makeEtcDefault, bashScriptConfigLocation) map { (conf, configLocation) =>
       configLocation.flatMap { path =>
-        conf.map(c => LinuxPackageMapping(Seq(c -> path), LinuxFileMetaData(Users.Root, Users.Root, "644")).withConfig())
+        // TODO this is ugly. Create a better solution
+        // check that path doesn't contain relative elements
+        val relativePaths = "\\$\\{app_home\\}|/[\\.]{1,2}".r.findFirstIn(path)
+        if (relativePaths.isDefined) None // cannot create the file, mapping provided by user
+        else conf.map(c => LinuxPackageMapping(Seq(c -> path), LinuxFileMetaData(Users.Root, Users.Root, "644")).withConfig())
       }.toSeq
     }
 
@@ -98,7 +102,9 @@ object JavaServerAppPackaging extends AutoPlugin {
     )) ++ Seq(
       // === Daemon User and Group ===
       daemonUser in Debian <<= daemonUser in Linux,
+      daemonUserUid in Debian <<= daemonUserUid in Linux,
       daemonGroup in Debian <<= daemonGroup in Linux,
+      daemonGroupGid in Debian <<= daemonGroupGid in Linux,
       // === Maintainer scripts ===
       debianMakePreinstScript <<= (target in Universal, serverLoading in Debian, linuxScriptReplacements) map makeMaintainerScript(Preinst),
       debianMakePostinstScript <<= (target in Universal, serverLoading in Debian, linuxScriptReplacements) map makeMaintainerScript(Postinst),
@@ -126,7 +132,9 @@ object JavaServerAppPackaging extends AutoPlugin {
     )) ++ Seq(
       // === Daemon User and Group ===
       daemonUser in Rpm <<= daemonUser in Linux,
+      daemonUserUid in Rpm <<= daemonUserUid in Linux,
       daemonGroup in Rpm <<= daemonGroup in Linux,
+      daemonGroupGid in Rpm <<= daemonGroupGid in Linux,
       // === Startscript creation ===
       linuxStartScriptTemplate := JavaServerLoaderScript(
         script = startScriptName((serverLoading in Rpm).value, Rpm),
@@ -174,8 +182,7 @@ object JavaServerAppPackaging extends AutoPlugin {
     requiredStopFacilities: Option[String],
     startRunlevels: Option[String],
     stopRunlevels: Option[String],
-    loader: ServerLoader
-  ): Seq[(String, String)] = {
+    loader: ServerLoader): Seq[(String, String)] = {
 
     // Upstart cannot handle empty values
     val (startOn, stopOn) = loader match {
@@ -242,10 +249,8 @@ object JavaServerAppPackaging extends AutoPlugin {
 
   protected def makeMaintainerScript(
     scriptName: String,
-    template: Option[URL] = None, archetype: String = ARCHETYPE, config: Configuration = Debian
-  )(
-    tmpDir: File, loader: ServerLoader, replacements: Seq[(String, String)]
-  ): Option[File] = {
+    template: Option[URL] = None, archetype: String = ARCHETYPE, config: Configuration = Debian)(
+      tmpDir: File, loader: ServerLoader, replacements: Seq[(String, String)]): Option[File] = {
     val scriptBits = JavaServerBashScript(scriptName, archetype, config, replacements, template) getOrElse {
       sys.error(s"Couldn't load [$scriptName] for config [${config.name}] in archetype [$archetype]")
     }
